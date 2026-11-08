@@ -6,6 +6,12 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+import {
+  Button as YamadaButton,
+  Field,
+  Input as YamadaInput,
+  Textarea as YamadaTextarea,
+} from "@yamada-ui/react";
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 
@@ -338,7 +344,13 @@ export default function Home() {
             </div>
             <div className="wardrobe-search">
               <span>⌕</span>
-              <input value={wardrobeSearch} onChange={(event) => setWardrobeSearch(event.target.value)} placeholder="Търси тениска, дънки, обувки..." aria-label="Търси в моя гардероб" />
+              <YamadaInput
+                value={wardrobeSearch}
+                onChange={(event) => setWardrobeSearch(event.target.value)}
+                placeholder="Търси тениска, дънки, обувки..."
+                aria-label="Търси в моя гардероб"
+                variant="flushed"
+              />
               {wardrobeSearch && <button onClick={() => setWardrobeSearch("")} aria-label="Изчисти търсенето">×</button>}
             </div>
             <div className="wardrobe-categories">
@@ -372,10 +384,21 @@ export default function Home() {
             <p className="eyebrow">MY WARDROBE</p><h2>Добави дреха</h2><p className="modal-copy">Създай дигитален гардероб, който е наистина твой.</p>
             <label>Снимка<input type="file" accept="image/*" onChange={handleImage} /></label>
             {newItemImage && <ImagePreview src={newItemImage} alt="Преглед" className="upload-preview" />}
-            <label>Име<input name="name" placeholder="Напр. Винтидж риза" required /></label>
-            <div className="form-row"><label>Тип<select name="type" defaultValue="Тениска"><option>Тениска</option><option>Риза</option><option>Връхна дреха</option><option>Дънки</option><option>Обувки</option><option>Аксесоар</option></select></label><label>Цвят<input name="color" placeholder="Черно" /></label></div>
-            <label>Описание<textarea name="description" placeholder="Материя, кройка, повод..." rows={3} /></label>
-            <button className="primary-button full" type="submit">Запази в гардероба</button>
+            <Field.Root label="Име" replace={false}>
+              <YamadaInput name="name" placeholder="Напр. Винтидж риза" required />
+            </Field.Root>
+            <div className="form-row">
+              <Field.Root label="Тип" replace={false}>
+                <select name="type" defaultValue="Тениска"><option>Тениска</option><option>Риза</option><option>Връхна дреха</option><option>Дънки</option><option>Обувки</option><option>Аксесоар</option></select>
+              </Field.Root>
+              <Field.Root label="Цвят" replace={false}>
+                <YamadaInput name="color" placeholder="Черно" />
+              </Field.Root>
+            </div>
+            <Field.Root label="Описание" helperMessage="Материя, кройка, повод..." replace={false}>
+              <YamadaTextarea name="description" placeholder="Опиши дрехата си..." rows={3} />
+            </Field.Root>
+            <YamadaButton className="primary-button full" type="submit">Запази в гардероба</YamadaButton>
           </form>
         </div>
       )}

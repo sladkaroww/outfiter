@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { UIProvider } from "@yamada-ui/react";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="bg">
       <body>
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider>
+          <UIProvider>{children}</UIProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
