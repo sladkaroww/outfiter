@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const sql = getDb();
     const items = await sql`
-      select id, name, type, color, image_url, created_at
+      select id, name, type, color, description, image_url, created_at
       from wardrobe_items
       where clerk_user_id = ${userId}
       order by created_at desc
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const type = typeof body.type === "string" ? body.type.trim() : "";
   const color = typeof body.color === "string" ? body.color.trim() : "";
+  const description = typeof body.description === "string" ? body.description.trim() : "";
   const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
 
   if (!name || !type || !imageUrl) {
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
   try {
     const sql = getDb();
     const [item] = await sql`
-      insert into wardrobe_items (clerk_user_id, name, type, color, image_url)
-      values (${userId}, ${name}, ${type}, ${color}, ${imageUrl})
-      returning id, name, type, color, image_url, created_at
+      insert into wardrobe_items (clerk_user_id, name, type, color, description, image_url)
+      values (${userId}, ${name}, ${type}, ${color}, ${description}, ${imageUrl})
+      returning id, name, type, color, description, image_url, created_at
     `;
     return NextResponse.json({ item }, { status: 201 });
   } catch (error) {

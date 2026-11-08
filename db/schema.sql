@@ -4,6 +4,7 @@ create table if not exists wardrobe_items (
   name text not null,
   type text not null,
   color text not null default '',
+  description text not null default '',
   image_url text not null,
   created_at timestamptz not null default now()
 );

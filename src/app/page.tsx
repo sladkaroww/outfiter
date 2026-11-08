@@ -14,6 +14,7 @@ type ClothingItem = {
   name: string;
   type: string;
   color: string;
+  description: string;
   image: string;
 };
 
@@ -36,6 +37,7 @@ const starterItems: ClothingItem[] = [
     name: "Oversized blazer",
     type: "Връхна дреха",
     color: "Черно",
+    description: "Структуриран блейзър за ежедневни и официални визии.",
     image:
       "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=700&q=85",
   },
@@ -44,6 +46,7 @@ const starterItems: ClothingItem[] = [
     name: "Classic white tee",
     type: "Тениска",
     color: "Бяло",
+    description: "Базова памучна тениска със свободна кройка.",
     image:
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85",
   },
@@ -52,6 +55,7 @@ const starterItems: ClothingItem[] = [
     name: "Straight denim",
     type: "Дънки",
     color: "Синьо",
+    description: "Прав модел дънки с висока талия.",
     image:
       "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=700&q=85",
   },
@@ -111,11 +115,23 @@ export default function Home() {
   const [showItemModal, setShowItemModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [newItemImage, setNewItemImage] = useState("");
+  const [wardrobeSearch, setWardrobeSearch] = useState("");
+  const [wardrobeCategory, setWardrobeCategory] = useState("Всички");
 
   const visiblePosts = useMemo(() => {
     if (activeCategory === "Всички") return posts;
     return posts.filter((post) => post.title.toLowerCase().includes(activeCategory.slice(0, -1).toLowerCase()));
   }, [activeCategory, posts]);
+
+  const wardrobeCategories = ["Всички", ...Array.from(new Set(items.map((item) => item.type)))];
+  const visibleItems = useMemo(() => {
+    const query = wardrobeSearch.trim().toLowerCase();
+    return items.filter((item) => {
+      const matchesCategory = wardrobeCategory === "Всички" || item.type === wardrobeCategory;
+      const searchable = `${item.name} ${item.type} ${item.color} ${item.description}`.toLowerCase();
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+  }, [items, wardrobeCategory, wardrobeSearch]);
 
   function toggleLike(id: number) {
     setPosts((current) =>
@@ -137,6 +153,7 @@ export default function Home() {
     const name = String(form.get("name") || "Нова дреха");
     const type = String(form.get("type") || "Други");
     const color = String(form.get("color") || "Неутрален");
+    const description = String(form.get("description") || "");
 
     setItems((current) => [
       {
@@ -144,6 +161,7 @@ export default function Home() {
         name,
         type,
         color,
+        description,
         image:
           newItemImage ||
           "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=700&q=85",
@@ -198,9 +216,16 @@ export default function Home() {
           <button className={activeTab === "feed" ? "nav-link active" : "nav-link"} onClick={() => setActiveTab("feed")}>
             Feed
           </button>
-          <button className={activeTab === "wardrobe" ? "nav-link active" : "nav-link"} onClick={() => setActiveTab("wardrobe")}>
-            Гардероб
-          </button>
+          <Show when="signed-in">
+            <button className={activeTab === "wardrobe" ? "nav-link active" : "nav-link"} onClick={() => setActiveTab("wardrobe")}>
+              Моят гардероб
+            </button>
+          </Show>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button className="nav-link">Моят гардероб</button>
+            </SignInButton>
+          </Show>
         </nav>
         <div className="auth-actions">
           <Show when="signed-out">
@@ -227,7 +252,14 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setActiveTab("feed")}>Разгледай feed-а <span>↗</span></button>
-            <button className="secondary-button" onClick={() => setShowItemModal(true)}>+ Добави дреха</button>
+            <Show when="signed-in">
+              <button className="secondary-button" onClick={() => setActiveTab("wardrobe")}>+ Добави дреха</button>
+            </Show>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className="secondary-button">Влез, за да добавяш дрехи</button>
+              </SignInButton>
+            </Show>
           </div>
         </div>
         <div className="hero-card">
@@ -252,7 +284,9 @@ export default function Home() {
           </div>
           <div className="tab-switcher">
             <button className={activeTab === "feed" ? "selected" : ""} onClick={() => setActiveTab("feed")}>Feed</button>
-            <button className={activeTab === "wardrobe" ? "selected" : ""} onClick={() => setActiveTab("wardrobe")}>Гардероб</button>
+            <Show when="signed-in">
+              <button className={activeTab === "wardrobe" ? "selected" : ""} onClick={() => setActiveTab("wardrobe")}>Моят гардероб</button>
+            </Show>
           </div>
         </div>
 
@@ -289,21 +323,39 @@ export default function Home() {
             </div>
           </>
         ) : (
+          <Show when="signed-in" fallback={
+            <section className="private-wardrobe-prompt">
+              <p className="eyebrow">PRIVATE SPACE</p>
+              <h2>Влез, за да отвориш своя гардероб.</h2>
+              <p>Тук ще съхраняваш дрехите си, ще ги намираш с търсачка и ще създаваш лични аутфити.</p>
+              <SignInButton mode="modal"><button className="primary-button">Влез в профила си <span>↗</span></button></SignInButton>
+            </section>
+          }>
           <section className="wardrobe-section">
             <div className="wardrobe-toolbar">
-              <p>{items.length} дрехи в твоя гардероб</p>
+              <div><p className="eyebrow">PRIVATE SPACE</p><p>{items.length} дрехи в твоя гардероб</p></div>
               <button className="primary-button small" onClick={() => setShowItemModal(true)}>+ Добави дреха</button>
             </div>
+            <div className="wardrobe-search">
+              <span>⌕</span>
+              <input value={wardrobeSearch} onChange={(event) => setWardrobeSearch(event.target.value)} placeholder="Търси тениска, дънки, обувки..." aria-label="Търси в моя гардероб" />
+              {wardrobeSearch && <button onClick={() => setWardrobeSearch("")} aria-label="Изчисти търсенето">×</button>}
+            </div>
+            <div className="wardrobe-categories">
+              {wardrobeCategories.map((category) => <button key={category} className={wardrobeCategory === category ? "category selected" : "category"} onClick={() => setWardrobeCategory(category)}>{category}</button>)}
+            </div>
+            {visibleItems.length === 0 ? <div className="wardrobe-empty"><strong>Няма намерени дрехи</strong><span>Пробвай с „тениска“ или добави нова дреха.</span><button className="secondary-button" onClick={() => setShowItemModal(true)}>+ Добави дреха</button></div> : null}
             <div className="wardrobe-grid">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <article className="item-card" key={item.id}>
                   <ImagePreview src={item.image} alt={item.name} className="item-image" />
-                  <div><span>{item.type}</span><h3>{item.name}</h3><p>{item.color}</p></div>
+                  <div><span>{item.type}</span><h3>{item.name}</h3><p>{item.color}</p><small>{item.description}</small></div>
                 </article>
               ))}
               <button className="item-card add-card" onClick={() => setShowItemModal(true)}><span>+</span><strong>Добави дреха</strong><small>Снимай или качи снимка</small></button>
             </div>
           </section>
+          </Show>
         )}
       </div>
 
@@ -322,6 +374,7 @@ export default function Home() {
             {newItemImage && <ImagePreview src={newItemImage} alt="Преглед" className="upload-preview" />}
             <label>Име<input name="name" placeholder="Напр. Винтидж риза" required /></label>
             <div className="form-row"><label>Тип<select name="type" defaultValue="Тениска"><option>Тениска</option><option>Риза</option><option>Връхна дреха</option><option>Дънки</option><option>Обувки</option><option>Аксесоар</option></select></label><label>Цвят<input name="color" placeholder="Черно" /></label></div>
+            <label>Описание<textarea name="description" placeholder="Материя, кройка, повод..." rows={3} /></label>
             <button className="primary-button full" type="submit">Запази в гардероба</button>
           </form>
         </div>
