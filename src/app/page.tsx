@@ -13,7 +13,8 @@ import {
   Textarea as YamadaTextarea,
 } from "@yamada-ui/react";
 import Link from "next/link";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { MagneticDropZone } from "@/components/MagneticDropZone";
 
 type ClothingItem = {
   id: number;
@@ -179,10 +180,9 @@ export default function Home() {
     event.currentTarget.reset();
   }
 
-  function handleImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setNewItemImage(URL.createObjectURL(file));
+  function handleUploadedFiles(files: File[]) {
+    const file = files[0];
+    setNewItemImage(file ? URL.createObjectURL(file) : "");
   }
 
   function addPost(event: FormEvent<HTMLFormElement>) {
@@ -382,7 +382,8 @@ export default function Home() {
           <form className="modal" onSubmit={addItem}>
             <button type="button" className="modal-close" onClick={() => setShowItemModal(false)}>×</button>
             <p className="eyebrow">MY WARDROBE</p><h2>Добави дреха</h2><p className="modal-copy">Създай дигитален гардероб, който е наистина твой.</p>
-            <label>Снимка<input type="file" accept="image/*" onChange={handleImage} /></label>
+            <label>Снимка</label>
+            <MagneticDropZone onFilesChange={handleUploadedFiles} />
             {newItemImage && <ImagePreview src={newItemImage} alt="Преглед" className="upload-preview" />}
             <Field.Root label="Име" replace={false}>
               <YamadaInput name="name" placeholder="Напр. Винтидж риза" required />
