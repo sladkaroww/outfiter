@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { UIProvider } from "@yamada-ui/react";
 import type { Metadata } from "next";
 import "./globals.css";
+import { AppStateProvider } from "@/components/app-state";
 
 export const metadata: Metadata = {
   title: "outfiter. — Your style, your story",
@@ -13,7 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bg">
       <body>
         <ClerkProvider>
-          <UIProvider>{children}</UIProvider>
+          <UIProvider><AppStateProvider>{children}</AppStateProvider></UIProvider>
         </ClerkProvider>
       </body>
     </html>
