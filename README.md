@@ -17,13 +17,13 @@ cp .env.example .env.local
 ```
 
 Apply the initial database schema from `db/schema.sql` to the Neon branch before
-using the API routes. The first UI slice includes a public outfit feed, Clerk
-sign-in/sign-up controls, wardrobe management, image previews, and outfit
-publishing. The browser demo uses starter data until `DATABASE_URL` and the
-schema are configured.
+using the API routes. Wardrobe images use a private Neon Object Storage bucket;
+configure the AWS-compatible variables from `.env.example` and set
+`NEON_STORAGE_BUCKET` to `wardrobe-images`. The app stores only the object key
+in Postgres and creates signed download URLs when loading the wardrobe.
 
 ## Deploying to Vercel
 
-Import the repository into Vercel and add the Clerk variables plus
-`DATABASE_URL` in the project environment settings. Vercel detects the Next.js
-build automatically.
+Import the repository into Vercel and add the Clerk variables, `DATABASE_URL`,
+and the Neon Object Storage variables in the project environment settings.
+Vercel detects the Next.js build automatically.

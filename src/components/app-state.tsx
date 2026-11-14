@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export type ClothingItem = {
-  id: number;
+  id: number | string;
   name: string;
   type: string;
   color: string;
@@ -38,7 +39,7 @@ const starterPosts: OutfitPost[] = [
 type AppState = {
   items: ClothingItem[];
   posts: OutfitPost[];
-  addItem: (item: Omit<ClothingItem, "id">) => void;
+  addItem: (item: Omit<ClothingItem, "id">, imageFile?: File) => Promise<void>;
   addPost: (post: Omit<OutfitPost, "id" | "liked" | "likes">) => void;
   toggleLike: (id: number) => void;
 };
@@ -46,12 +47,63 @@ type AppState = {
 const AppStateContext = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
   const [items, setItems] = useState(starterItems);
   const [posts, setPosts] = useState(starterPosts);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    let cancelled = false;
+    fetch("/api/items")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Failed to load wardrobe");
+        return response.json();
+      })
+      .then((data: { items: Array<{ id: string; name: string; type: string; color: string; description: string; image_url: string }> }) => {
+        if (cancelled) return;
+        setItems(data.items.map((item) => ({ id: item.id, name: item.name, type: item.type, color: item.color, description: item.description, image: item.image_url })));
+      })
+      .catch((error) => console.error("Failed to load wardrobe", error));
+    return () => { cancelled = true; };
+  }, [isLoaded, isSignedIn]);
+
   const value = useMemo<AppState>(() => ({
     items,
     posts,
-    addItem: (item) => setItems((current) => [{ ...item, id: Date.now() }, ...current]),
+    addItem: async (item, imageFile) => {
+      let imageKey = item.image;
+      if (imageFile) {
+        const uploadResponse = await fetch("/api/uploads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contentType: imageFile.type }),
+        });
+        if (!uploadResponse.ok) throw new Error("Неуспешна подготовка на снимката");
+        const { key, uploadUrl } = await uploadResponse.json();
+        const putResponse = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": imageFile.type },
+          body: imageFile,
+        });
+        if (!putResponse.ok) throw new Error("Неуспешно качване на снимката");
+        imageKey = key;
+      }
+      const response = await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...item, imageKey }),
+      });
+      if (!response.ok) throw new Error("Неуспешно запазване на дрехата");
+      const data = await response.json();
+      setItems((current) => [{
+        id: data.item.id,
+        name: data.item.name,
+        type: data.item.type,
+        color: data.item.color,
+        description: data.item.description,
+        image: imageFile ? URL.createObjectURL(imageFile) : item.image,
+      }, ...current]);
+    },
     addPost: (post) => setPosts((current) => [{ ...post, id: Date.now(), liked: false, likes: 0 }, ...current]),
     toggleLike: (id) => setPosts((current) => current.map((post) => post.id === id ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 } : post)),
   }), [items, posts]);

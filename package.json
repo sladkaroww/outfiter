@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1169.0",
+    "@aws-sdk/s3-request-presigner": "^3.1169.0",
     "@clerk/nextjs": "^7.9.25",
     "@neondatabase/serverless": "^1.2.0",
     "@phosphor-icons/react": "^2.1.10",

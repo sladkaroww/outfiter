@@ -1,6 +1,15 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { createDownloadUrl, isStorageKey } from "@/lib/storage";
+
+async function withImageUrl(item: Record<string, unknown>) {
+  const imageKey = String(item.image_url || "");
+  return {
+    ...item,
+    image_url: isStorageKey(imageKey) ? await createDownloadUrl(imageKey) : imageKey,
+  };
+}
 
 export async function GET() {
   const { userId } = await auth();
@@ -14,7 +23,7 @@ export async function GET() {
       where clerk_user_id = ${userId}
       order by created_at desc
     `;
-    return NextResponse.json({ items });
+    return NextResponse.json({ items: await Promise.all(items.map((item) => withImageUrl(item))) });
   } catch (error) {
     console.error("Failed to load wardrobe", error);
     return NextResponse.json({ error: "Wardrobe is not configured yet" }, { status: 503 });
@@ -30,7 +39,11 @@ export async function POST(request: Request) {
   const type = typeof body.type === "string" ? body.type.trim() : "";
   const color = typeof body.color === "string" ? body.color.trim() : "";
   const description = typeof body.description === "string" ? body.description.trim() : "";
-  const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+  const imageUrl = typeof body.imageKey === "string"
+    ? body.imageKey.trim()
+    : typeof body.imageUrl === "string"
+      ? body.imageUrl.trim()
+      : "";
 
   if (!name || !type || !imageUrl) {
     return NextResponse.json({ error: "name, type and imageUrl are required" }, { status: 400 });
